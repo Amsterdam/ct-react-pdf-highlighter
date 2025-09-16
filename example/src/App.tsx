@@ -67,7 +67,9 @@ export function App() {
     setHighlights(testHighlights[newUrl] ? [...testHighlights[newUrl]] : []);
   };
 
-  const scrollViewerTo = useRef((highlight: IHighlight) => {});
+  const scrollViewerTo = useRef(
+    (target: IHighlight | { pageNumber: number }) => {},
+  );
 
   const scrollToHighlightFromHash = useCallback(() => {
     const highlight = getHighlightById(parseIdFromHash());
@@ -131,6 +133,7 @@ export function App() {
         highlights={highlights}
         resetHighlights={resetHighlights}
         toggleDocument={toggleDocument}
+        scrollTo={scrollViewerTo.current}
       />
       <div
         style={{

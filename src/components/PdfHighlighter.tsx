@@ -66,7 +66,9 @@ interface Props<T_HT> {
   ) => JSX.Element;
   highlights: Array<T_HT>;
   onScrollChange: () => void;
-  scrollRef: (scrollTo: (highlight: T_HT) => void) => void;
+  scrollRef: (
+    scrollTo: (target: T_HT | { pageNumber: number }) => void,
+  ) => void;
   pdfDocument: PDFDocumentProxy;
   pdfScaleValue: string;
   onSelectionFinished: (
@@ -375,7 +377,15 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
     this.renderHighlightLayers();
   };
 
-  scrollTo = (highlight: T_HT) => {
+  scrollTo = (target: T_HT | { pageNumber: number }) => {
+    // Check if target is a page number object
+    if ("pageNumber" in target && !("position" in target)) {
+      this.scrollToPage(target.pageNumber);
+      return;
+    }
+
+    // Handle the original highlight case
+    const highlight = target as T_HT;
     const { pageNumber, boundingRect, usePdfCoordinates } = highlight.position;
 
     this.viewer.container.removeEventListener("scroll", this.onScroll);
@@ -401,6 +411,26 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
     this.setState(
       {
         scrolledToHighlightId: highlight.id,
+      },
+      () => this.renderHighlightLayers(),
+    );
+
+    // wait for scrolling to finish
+    setTimeout(() => {
+      this.viewer.container.addEventListener("scroll", this.onScroll);
+    }, 100);
+  };
+
+  scrollToPage = (pageNumber: number) => {
+    this.viewer.container.removeEventListener("scroll", this.onScroll);
+
+    this.viewer.scrollPageIntoView({
+      pageNumber,
+    });
+
+    this.setState(
+      {
+        scrolledToHighlightId: EMPTY_ID,
       },
       () => this.renderHighlightLayers(),
     );

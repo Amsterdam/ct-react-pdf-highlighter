@@ -1,9 +1,11 @@
+import React, { useState } from "react";
 import type { IHighlight } from "./react-pdf-highlighter";
 
 interface Props {
   highlights: Array<IHighlight>;
   resetHighlights: () => void;
   toggleDocument: () => void;
+  scrollTo?: (target: IHighlight | { pageNumber: number }) => void;
 }
 
 const updateHash = (highlight: IHighlight) => {
@@ -16,7 +18,16 @@ export function Sidebar({
   highlights,
   toggleDocument,
   resetHighlights,
+  scrollTo,
 }: Props) {
+  const [pageNumber, setPageNumber] = useState("");
+
+  const handleScrollToPage = () => {
+    const page = Number.parseInt(pageNumber);
+    if (page && scrollTo && page > 0) {
+      scrollTo({ pageNumber: page });
+    }
+  };
   return (
     <div className="sidebar" style={{ width: "25vw" }}>
       <div className="description" style={{ padding: "1rem" }}>
@@ -74,6 +85,25 @@ export function Sidebar({
         <button type="button" onClick={toggleDocument}>
           Toggle PDF document
         </button>
+      </div>
+      <div style={{ padding: "1rem" }}>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <input
+            type="number"
+            min="1"
+            placeholder="Page number"
+            value={pageNumber}
+            onChange={(e) => setPageNumber(e.target.value)}
+            style={{ flex: 1, padding: "0.5rem" }}
+            aria-label="Scroll to page"
+          />
+          <button type="button" onClick={handleScrollToPage}>
+            Go
+          </button>
+        </div>
+        <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#666" }}>
+          Enter page number and click "Go" to scroll
+        </div>
       </div>
       {highlights.length > 0 ? (
         <div style={{ padding: "1rem" }}>
