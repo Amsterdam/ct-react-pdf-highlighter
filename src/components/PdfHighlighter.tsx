@@ -376,7 +376,7 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
   };
 
   scrollTo = (highlight: T_HT) => {
-    const { pageNumber, boundingRect, usePdfCoordinates } = highlight.position;
+    const { pageNumber } = highlight.position;
 
     this.viewer.container.removeEventListener("scroll", this.onScroll);
 
@@ -389,11 +389,7 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
       destArray: [
         null,
         { name: "XYZ" },
-        ...pageViewport.convertToPdfPoint(
-          0,
-          scaledToViewport(boundingRect, pageViewport, usePdfCoordinates).top -
-            scrollMargin,
-        ),
+        ...pageViewport.convertToPdfPoint(0, scrollMargin),
         0,
       ],
     });
