@@ -20,14 +20,28 @@ import { Spinner } from "./Spinner";
 import { testHighlights as _testHighlights } from "./test-highlights";
 
 import "./style/App.css";
-import "../../dist/style.css";
+// import "../../dist/style.css";
 
 const testHighlights: Record<string, Array<IHighlight>> = _testHighlights;
 
 const getNextId = () => String(Math.random()).slice(2);
 
-const parseIdFromHash = () =>
-  document.location.hash.slice("#highlight-".length);
+const HIGHLIGHT_HASH_PREFIX = "#highlight-";
+const PAGE_HASH_PREFIX = "#page-";
+
+const parseHighlightIdFromHash = (hash: string) =>
+  hash.startsWith(HIGHLIGHT_HASH_PREFIX)
+    ? hash.slice(HIGHLIGHT_HASH_PREFIX.length)
+    : null;
+
+const parsePageNumberFromHash = (hash: string) => {
+  if (!hash.startsWith(PAGE_HASH_PREFIX)) {
+    return null;
+  }
+
+  const page = Number.parseInt(hash.slice(PAGE_HASH_PREFIX.length), 10);
+  return Number.isInteger(page) && page > 0 ? page : null;
+};
 
 const resetHash = () => {
   document.location.hash = "";
@@ -56,6 +70,11 @@ export function App() {
     testHighlights[initialUrl] ? [...testHighlights[initialUrl]] : [],
   );
 
+  const getHighlightById = useCallback(
+    (id: string) => highlights.find((highlight) => highlight.id === id),
+    [highlights],
+  );
+
   const resetHighlights = () => {
     setHighlights([]);
   };
@@ -71,27 +90,34 @@ export function App() {
     (target: IHighlight | { pageNumber: number }) => {},
   );
 
-  const scrollToHighlightFromHash = useCallback(() => {
-    const highlight = getHighlightById(parseIdFromHash());
-    if (highlight) {
-      scrollViewerTo.current(highlight);
+  const scrollToTargetFromHash = useCallback(() => {
+    const { hash } = document.location;
+
+    const highlightId = parseHighlightIdFromHash(hash);
+    if (highlightId) {
+      const highlight = getHighlightById(highlightId);
+      if (highlight) {
+        scrollViewerTo.current(highlight);
+      }
+      return;
     }
-  }, []);
+
+    const pageNumber = parsePageNumberFromHash(hash);
+    if (pageNumber) {
+      scrollViewerTo.current({ pageNumber });
+    }
+  }, [getHighlightById]);
 
   useEffect(() => {
-    window.addEventListener("hashchange", scrollToHighlightFromHash, false);
+    window.addEventListener("hashchange", scrollToTargetFromHash, false);
     return () => {
       window.removeEventListener(
         "hashchange",
-        scrollToHighlightFromHash,
+        scrollToTargetFromHash,
         false,
       );
     };
-  }, [scrollToHighlightFromHash]);
-
-  const getHighlightById = (id: string) => {
-    return highlights.find((highlight) => highlight.id === id);
-  };
+  }, [scrollToTargetFromHash]);
 
   const addHighlight = (highlight: NewHighlight) => {
     console.log("Saving highlight", highlight);
@@ -133,7 +159,6 @@ export function App() {
         highlights={highlights}
         resetHighlights={resetHighlights}
         toggleDocument={toggleDocument}
-        scrollTo={scrollViewerTo.current}
       />
       <div
         style={{
@@ -150,7 +175,7 @@ export function App() {
               onScrollChange={resetHash}
               scrollRef={(scrollTo) => {
                 scrollViewerTo.current = scrollTo;
-                scrollToHighlightFromHash();
+                scrollToTargetFromHash();
               }}
               onSelectionFinished={(
                 position,

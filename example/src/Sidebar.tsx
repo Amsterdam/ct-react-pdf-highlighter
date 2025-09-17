@@ -5,11 +5,14 @@ interface Props {
   highlights: Array<IHighlight>;
   resetHighlights: () => void;
   toggleDocument: () => void;
-  scrollTo?: (target: IHighlight | { pageNumber: number }) => void;
 }
 
 const updateHash = (highlight: IHighlight) => {
   document.location.hash = `highlight-${highlight.id}`;
+};
+
+const updatePageHash = (page: number) => {
+  document.location.hash = `page-${page}`;
 };
 
 declare const APP_VERSION: string;
@@ -18,14 +21,13 @@ export function Sidebar({
   highlights,
   toggleDocument,
   resetHighlights,
-  scrollTo,
 }: Props) {
   const [pageNumber, setPageNumber] = useState("");
 
   const handleScrollToPage = () => {
-    const page = Number.parseInt(pageNumber);
-    if (page && scrollTo && page > 0) {
-      scrollTo({ pageNumber: page });
+    const page = Number.parseInt(pageNumber, 10);
+    if (Number.isInteger(page) && page > 0) {
+      updatePageHash(page);
     }
   };
   return (
